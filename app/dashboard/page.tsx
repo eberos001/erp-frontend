@@ -102,7 +102,7 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-6xl space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">ERP Dashboard Test</h1>
+            <h1 className="text-3xl font-bold">EBEROS ERP Dashboard</h1>
             <p className="text-gray-600">Signed in as: {email}</p>
           </div>
           <button
