@@ -15,13 +15,11 @@ type Task = {
 type Client = {
   id: string
   name: string
-  organization_id: string
 }
 
 type Company = {
   id: string
   name: string
-  organization_id: string
 }
 
 export default function DashboardPage() {
@@ -29,143 +27,223 @@ export default function DashboardPage() {
   const router = useRouter()
 
   const [email, setEmail] = useState('')
+  const [organizationId, setOrganizationId] = useState('')
   const [tasks, setTasks] = useState<Task[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true)
-      setError('')
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [newTaskStatus, setNewTaskStatus] = useState('pending')
+  const [newTaskPriority, setNewTaskPriority] = useState('medium')
+  const [creatingTask, setCreatingTask] = useState(false)
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
+  async function loadData() {
+    setLoading(true)
+    setError('')
 
-      if (userError || !user) {
-        router.push('/login')
-        return
-      }
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
-      setEmail(user.email ?? '')
-
-      const [
-        { data: tasksData, error: tasksError },
-        { data: clientsData, error: clientsError },
-        { data: companiesData, error: companiesError },
-      ] = await Promise.all([
-        supabase
-          .from('tasks')
-          .select('id, title, status, priority, organization_id')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('clients')
-          .select('id, name, organization_id')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('companies')
-          .select('id, name, organization_id')
-          .order('created_at', { ascending: false }),
-      ])
-
-      if (tasksError || clientsError || companiesError) {
-        setError(
-          tasksError?.message ||
-            clientsError?.message ||
-            companiesError?.message ||
-            'Failed to load dashboard data.'
-        )
-        setLoading(false)
-        return
-      }
-
-      setTasks(tasksData ?? [])
-      setClients(clientsData ?? [])
-      setCompanies(companiesData ?? [])
-      setLoading(false)
+    if (userError || !user) {
+      router.push('/login')
+      return
     }
 
+    setEmail(user.email ?? '')
+
+    const { data: memberData } = await supabase
+      .from('team_members')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!memberData) {
+      setError('No team member record found.')
+      setLoading(false)
+      return
+    }
+
+    setOrganizationId(memberData.organization_id)
+
+    const { data: tasksData } = await supabase
+      .from('tasks')
+      .select('id, title, status, priority, organization_id')
+      .order('created_at', { ascending: false })
+
+    const { data: clientsData } = await supabase
+      .from('clients')
+      .select('id, name')
+      .order('created_at', { ascending: false })
+
+    const { data: companiesData } = await supabase
+      .from('companies')
+      .select('id, name')
+      .order('created_at', { ascending: false })
+
+    setTasks(tasksData || [])
+    setClients(clientsData || [])
+    setCompanies(companiesData || [])
+    setLoading(false)
+  }
+
+  useEffect(() => {
     loadData()
-  }, [router, supabase])
+  }, [])
+
+  async function handleCreateTask(e: React.FormEvent) {
+    e.preventDefault()
+
+    if (!newTaskTitle.trim()) return
+
+    setCreatingTask(true)
+
+    const { error } = await supabase.from('tasks').insert({
+      organization_id: organizationId,
+      title: newTaskTitle,
+      description: 'Created from dashboard',
+      status: newTaskStatus,
+      priority: newTaskPriority,
+    })
+
+    setCreatingTask(false)
+
+    if (error) {
+      setError(error.message)
+      return
+    }
+
+    setNewTaskTitle('')
+    await loadData()
+  }
+
+  async function handleUpdateTaskStatus(taskId: string, status: string) {
+    const { error } = await supabase
+      .from('tasks')
+      .update({ status })
+      .eq('id', taskId)
+
+    if (error) {
+      setError(error.message)
+      return
+    }
+
+    await loadData()
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/login')
-    router.refresh()
   }
 
   return (
     <main className="min-h-screen bg-gray-50 p-8 text-black">
       <div className="mx-auto max-w-6xl space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">EBEROS ERP Dashboard</h1>
             <p className="text-gray-600">Signed in as: {email}</p>
           </div>
           <button
             onClick={handleLogout}
-            className="rounded-lg bg-black px-4 py-2 text-white hover:opacity-90"
+            className="bg-black text-white px-4 py-2 rounded-lg"
           >
             Logout
           </button>
         </div>
 
-        {loading ? <p>Loading...</p> : null}
-        {error ? <p className="text-red-600">{error}</p> : null}
+        {/* CREATE TASK */}
+        <section className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-xl font-semibold mb-4">Create New Task</h2>
 
-        {!loading && !error ? (
-          <div className="grid gap-6 md:grid-cols-3">
-            <section className="rounded-xl bg-white p-6 shadow">
-              <h2 className="mb-4 text-xl font-semibold">Tasks</h2>
-              <div className="space-y-3">
-                {tasks.length === 0 ? (
-                  <p className="text-sm text-gray-500">No visible tasks.</p>
-                ) : (
-                  tasks.map((task) => (
-                    <div key={task.id} className="rounded-lg border p-3">
-                      <p className="font-medium">{task.title}</p>
-                      <p className="text-sm text-gray-600">Status: {task.status}</p>
-                      <p className="text-sm text-gray-600">Priority: {task.priority}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
+          <form onSubmit={handleCreateTask} className="grid gap-4 md:grid-cols-4">
+            <input
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              placeholder="Task title"
+              className="border px-3 py-2 rounded-lg md:col-span-2"
+            />
 
-            <section className="rounded-xl bg-white p-6 shadow">
-              <h2 className="mb-4 text-xl font-semibold">Clients</h2>
-              <div className="space-y-3">
-                {clients.length === 0 ? (
-                  <p className="text-sm text-gray-500">No visible clients.</p>
-                ) : (
-                  clients.map((client) => (
-                    <div key={client.id} className="rounded-lg border p-3">
-                      <p className="font-medium">{client.name}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
+            <select
+              value={newTaskStatus}
+              onChange={(e) => setNewTaskStatus(e.target.value)}
+              className="border px-3 py-2 rounded-lg"
+            >
+              <option value="pending">Pending</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
 
-            <section className="rounded-xl bg-white p-6 shadow">
-              <h2 className="mb-4 text-xl font-semibold">Companies</h2>
-              <div className="space-y-3">
-                {companies.length === 0 ? (
-                  <p className="text-sm text-gray-500">No visible companies.</p>
-                ) : (
-                  companies.map((company) => (
-                    <div key={company.id} className="rounded-lg border p-3">
-                      <p className="font-medium">{company.name}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          </div>
-        ) : null}
+            <select
+              value={newTaskPriority}
+              onChange={(e) => setNewTaskPriority(e.target.value)}
+              className="border px-3 py-2 rounded-lg"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+
+            <button className="bg-black text-white px-4 py-2 rounded-lg md:col-span-4">
+              {creatingTask ? 'Creating...' : 'Create Task'}
+            </button>
+          </form>
+        </section>
+
+        {/* TASKS */}
+        <section className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-xl font-semibold mb-4">Tasks</h2>
+
+          {tasks.map((task) => (
+            <div key={task.id} className="border p-3 rounded-lg mb-3">
+              <p className="font-medium">{task.title}</p>
+
+              <label className="text-sm text-gray-600">Status</label>
+              <select
+                value={task.status}
+                onChange={(e) =>
+                  handleUpdateTaskStatus(task.id, e.target.value)
+                }
+                className="w-full border px-3 py-2 rounded-lg mt-1"
+              >
+                <option value="pending">Pending</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+
+              <p className="text-sm text-gray-600 mt-1">
+                Priority: {task.priority}
+              </p>
+            </div>
+          ))}
+        </section>
+
+        {/* CLIENTS */}
+        <section className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-xl font-semibold mb-4">Clients</h2>
+
+          {clients.map((c) => (
+            <div key={c.id} className="border p-3 rounded-lg mb-2">
+              {c.name}
+            </div>
+          ))}
+        </section>
+
+        {/* COMPANIES */}
+        <section className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-xl font-semibold mb-4">Companies</h2>
+
+          {companies.map((c) => (
+            <div key={c.id} className="border p-3 rounded-lg mb-2">
+              {c.name}
+            </div>
+          ))}
+        </section>
+
+        {error && <p className="text-red-600">{error}</p>}
       </div>
     </main>
   )
