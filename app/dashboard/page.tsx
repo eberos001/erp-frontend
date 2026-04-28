@@ -167,6 +167,10 @@ async function deleteTask(taskId: string) {
     router.push('/login')
   }
 }
+async function handleLogout() {
+  await supabase.auth.signOut()
+  router.push('/login')
+}
   return (
     <main className="min-h-screen bg-gray-50 p-8 text-black">
       <div className="mx-auto max-w-6xl space-y-8">
