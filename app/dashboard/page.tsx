@@ -138,7 +138,22 @@ export default function DashboardPage() {
     await supabase.auth.signOut()
     router.push('/login')
   }
+async function deleteTask(taskId: string) {
+  const confirmed = window.confirm("Delete this task?");
+  if (!confirmed) return;
 
+  const { error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("id", taskId);
+
+  if (error) {
+    setError(error.message);
+    return;
+  }
+
+  await loadData();
+}
   return (
     <main className="min-h-screen bg-gray-50 p-8 text-black">
       <div className="mx-auto max-w-6xl space-y-8">
@@ -201,23 +216,18 @@ export default function DashboardPage() {
             <div key={task.id} className="border p-3 rounded-lg mb-3">
               <p className="font-medium">{task.title}</p>
 
-              <label className="text-sm text-gray-600">Status</label>
-              <select
-                value={task.status}
-                onChange={(e) =>
-                  handleUpdateTaskStatus(task.id, e.target.value)
-                }
-                className="w-full border px-3 py-2 rounded-lg mt-1"
-              >
-                <option value="pending">Pending</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-              </select>
+             <p className="text-sm text-gray-600 mt-1">
+  Priority: {task.priority}
+</p>
 
-              <p className="text-sm text-gray-600 mt-1">
-                Priority: {task.priority}
-              </p>
-            </div>
+<button
+  type="button"
+  onClick={() => deleteTask(task.id)}
+  className="mt-3 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700"
+>
+  Delete Task
+</button>
+</div>   
           ))}
         </section>
 
