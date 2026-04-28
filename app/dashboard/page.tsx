@@ -133,11 +133,20 @@ export default function DashboardPage() {
 
     await loadData()
   }
+async function updateTask(taskId: string, updates: Partial<Task>) {
+  const { error } = await supabase
+    .from('tasks')
+    .update(updates)
+    .eq('id', taskId)
 
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push('/login')
+  if (error) {
+    setError(error.message)
+    return
   }
+
+  await loadData()
+}
+
 async function deleteTask(taskId: string) {
   const confirmed = window.confirm("Delete this task?");
   if (!confirmed) return;
@@ -153,6 +162,10 @@ async function deleteTask(taskId: string) {
   }
 
   await loadData();
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 }
   return (
     <main className="min-h-screen bg-gray-50 p-8 text-black">
@@ -214,11 +227,22 @@ async function deleteTask(taskId: string) {
 
           {tasks.map((task) => (
             <div key={task.id} className="border p-3 rounded-lg mb-3">
-              <p className="font-medium">{task.title}</p>
+              <input
+  value={task.title}
+  onChange={(e) => updateTask(task.id, { title: e.target.value })}
+  className="w-full border px-3 py-2 rounded-lg font-medium mb-2"
+/>
 
-             <p className="text-sm text-gray-600 mt-1">
-  Priority: {task.priority}
-</p>
+             <label className="text-sm text-gray-600 mt-2 block">Priority</label>
+<select
+  value={task.priority}
+  onChange={(e) => updateTask(task.id, { priority: e.target.value })}
+  className="w-full border px-3 py-2 rounded-lg mt-1"
+>
+  <option value="low">Low</option>
+  <option value="medium">Medium</option>
+  <option value="high">High</option>
+</select>
 
 <button
   type="button"
