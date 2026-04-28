@@ -230,33 +230,64 @@ async function handleLogout() {
           <h2 className="text-xl font-semibold mb-4">Tasks</h2>
 
           {tasks.map((task) => (
-            <div key={task.id} className="border p-3 rounded-lg mb-3">
-              <input
-  value={task.title}
-  onChange={(e) => updateTask(task.id, { title: e.target.value })}
-  className="w-full border px-3 py-2 rounded-lg font-medium mb-2"
-/>
+  <div
+    key={task.id}
+    className="bg-white shadow-md rounded-2xl p-4 mb-4 border hover:shadow-lg transition"
+  >
+    {/* Title */}
+    <input
+      value={task.title}
+      onChange={(e) => updateTask(task.id, { title: e.target.value })}
+      className="w-full text-lg font-semibold border px-3 py-2 rounded-lg mb-3"
+    />
 
-             <label className="text-sm text-gray-600 mt-2 block">Priority</label>
-<select
-  value={task.priority}
-  onChange={(e) => updateTask(task.id, { priority: e.target.value })}
-  className="w-full border px-3 py-2 rounded-lg mt-1"
->
-  <option value="low">Low</option>
-  <option value="medium">Medium</option>
-  <option value="high">High</option>
-</select>
+    {/* Status + Priority Row */}
+    <div className="grid grid-cols-2 gap-3 mb-3">
+      
+      {/* Status */}
+      <div>
+        <label className="text-sm text-gray-500">Status</label>
+        <select
+          value={task.status}
+          onChange={(e) => updateTask(task.id, { status: e.target.value })}
+          className="w-full border px-3 py-2 rounded-lg mt-1"
+        >
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
 
-<button
-  type="button"
-  onClick={() => deleteTask(task.id)}
-  className="mt-3 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700"
->
-  Delete Task
-</button>
-</div>   
-          ))}
+      {/* Priority */}
+      <div>
+        <label className="text-sm text-gray-500">Priority</label>
+        <select
+          value={task.priority}
+          onChange={(e) => updateTask(task.id, { priority: e.target.value })}
+          className="w-full border px-3 py-2 rounded-lg mt-1"
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+    </div>
+
+    {/* Footer Actions */}
+    <div className="flex justify-between items-center">
+      <span className="text-xs text-gray-400">
+        Task ID: {task.id.slice(0, 8)}
+      </span>
+
+      <button
+        onClick={() => deleteTask(task.id)}
+        className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700"
+      >
+        Delete
+      </button>
+    </div>
+  </div>
+))}
         </section>
 
         {/* CLIENTS */}
