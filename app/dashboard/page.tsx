@@ -22,6 +22,11 @@ type Company = {
   name: string
 }
 
+type Company = {
+  id: string
+  name: string
+}
+
 export default function DashboardPage() {
   const supabase = createClient()
   const router = useRouter()
