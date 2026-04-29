@@ -167,15 +167,16 @@ async function deleteTask(taskId: string) {
   }
 
   await loadData();
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
 }
+
 async function handleLogout() {
-  await supabase.auth.signOut()
-  router.push('/login')
+  await supabase.auth.signOut();
+  router.push('/login');
 }
+const totalTasks = tasks.length;
+const pendingTasks = tasks.filter((task) => task.status === "pending").length;
+const inProgressTasks = tasks.filter((task) => task.status === "in_progress").length;
+const completedTasks = tasks.filter((task) => task.status === "completed").length;
   return (
     <main className="min-h-screen bg-gray-50 p-8 text-black">
       <div className="mx-auto max-w-6xl space-y-8">
@@ -191,6 +192,28 @@ async function handleLogout() {
             Logout
           </button>
         </div>
+        {/* DASHBOARD STATS */}
+<div className="grid grid-cols-1 md:grid-cols-4 gap-4 my-6">
+  <div className="bg-white border rounded-xl p-4 shadow-sm">
+    <p className="text-sm text-gray-500">Total Tasks</p>
+    <p className="text-3xl font-bold">{totalTasks}</p>
+  </div>
+
+  <div className="bg-white border rounded-xl p-4 shadow-sm">
+    <p className="text-sm text-gray-500">Pending</p>
+    <p className="text-3xl font-bold">{pendingTasks}</p>
+  </div>
+
+  <div className="bg-white border rounded-xl p-4 shadow-sm">
+    <p className="text-sm text-gray-500">In Progress</p>
+    <p className="text-3xl font-bold">{inProgressTasks}</p>
+  </div>
+
+  <div className="bg-white border rounded-xl p-4 shadow-sm">
+    <p className="text-sm text-gray-500">Completed</p>
+    <p className="text-3xl font-bold">{completedTasks}</p>
+  </div>
+</div>
 
         {/* CREATE TASK */}
         <section className="bg-white p-6 rounded-xl shadow">
