@@ -269,8 +269,10 @@ const completedTasks = tasks.filter((task) => task.status === "completed").lengt
       className="w-full text-lg font-semibold border px-3 py-2 rounded-lg mb-3"
     />
 
-    {/* Status + Priority Row */}
     <div className="grid grid-cols-2 gap-3 mb-3">
+  ...status label + select...
+  ...priority label + select...
+</div>
       
       {/* Status */}
       <div>
@@ -299,7 +301,6 @@ const completedTasks = tasks.filter((task) => task.status === "completed").lengt
           <option value="high">High</option>
         </select>
       </div>
-    </div>
 
     {/* Footer Actions */}
     <div className="flex justify-between items-center">
