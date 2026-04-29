@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const [newTaskStatus, setNewTaskStatus] = useState('pending')
   const [newTaskPriority, setNewTaskPriority] = useState('medium')
   const [creatingTask, setCreatingTask] = useState(false)
+  const [newTaskDueDate, setNewTaskDueDate] = useState("");
 
   async function loadData() {
     setLoading(true)
@@ -107,12 +108,13 @@ export default function DashboardPage() {
     setCreatingTask(true)
 
     const { error } = await supabase.from('tasks').insert({
-      organization_id: organizationId,
-      title: newTaskTitle,
-      description: 'Created from dashboard',
-      status: newTaskStatus,
-      priority: newTaskPriority,
-    })
+  organization_id: organizationId,
+  title: newTaskTitle,
+  description: 'Created from dashboard',
+  status: newTaskStatus,
+  priority: newTaskPriority,
+  due_date: newTaskDueDate || null,
+})
 
     setCreatingTask(false)
 
@@ -213,46 +215,50 @@ const completedTasks = tasks.filter((task) => task.status === "completed").lengt
     <p className="text-sm text-gray-500">Completed</p>
     <p className="text-3xl font-bold">{completedTasks}</p>
   </div>
-</div>
+  </div>{/* CREATE TASK */}
+<section className="bg-white p-6 rounded-xl shadow">
+  <h2 className="text-xl font-semibold mb-4">Create New Task</h2>
 
-        {/* CREATE TASK */}
-        <section className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-xl font-semibold mb-4">Create New Task</h2>
+  <form onSubmit={handleCreateTask} className="grid gap-4 md:grid-cols-4">
+    <input
+      value={newTaskTitle}
+      onChange={(e) => setNewTaskTitle(e.target.value)}
+      placeholder="Task title"
+      className="border px-3 py-2 rounded-lg md:col-span-2"
+    />
 
-          <form onSubmit={handleCreateTask} className="grid gap-4 md:grid-cols-4">
-            <input
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              placeholder="Task title"
-              className="border px-3 py-2 rounded-lg md:col-span-2"
-            />
+    <select
+      value={newTaskStatus}
+      onChange={(e) => setNewTaskStatus(e.target.value)}
+      className="border px-3 py-2 rounded-lg"
+    >
+      <option value="pending">Pending</option>
+      <option value="in_progress">In Progress</option>
+      <option value="completed">Completed</option>
+    </select>
 
-            <select
-              value={newTaskStatus}
-              onChange={(e) => setNewTaskStatus(e.target.value)}
-              className="border px-3 py-2 rounded-lg"
-            >
-              <option value="pending">Pending</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
+    <select
+      value={newTaskPriority}
+      onChange={(e) => setNewTaskPriority(e.target.value)}
+      className="border px-3 py-2 rounded-lg"
+    >
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+    </select>
 
-            <select
-              value={newTaskPriority}
-              onChange={(e) => setNewTaskPriority(e.target.value)}
-              className="border px-3 py-2 rounded-lg"
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
+    <input
+      type="date"
+      value={newTaskDueDate}
+      onChange={(e) => setNewTaskDueDate(e.target.value)}
+      className="border px-3 py-2 rounded-lg"
+    />
 
-            <button className="bg-black text-white px-4 py-2 rounded-lg md:col-span-4">
-              {creatingTask ? 'Creating...' : 'Create Task'}
-            </button>
-          </form>
-        </section>
-
+    <button className="bg-black text-white px-4 py-2 rounded-lg md:col-span-4">
+      {creatingTask ? "Creating..." : "Create Task"}
+    </button>
+  </form>
+</section>
         {/* TASKS */}
         <section className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-xl font-semibold mb-4">Tasks</h2>
@@ -268,11 +274,6 @@ const completedTasks = tasks.filter((task) => task.status === "completed").lengt
       onChange={(e) => updateTask(task.id, { title: e.target.value })}
       className="w-full text-lg font-semibold border px-3 py-2 rounded-lg mb-3"
     />
-
-    <div className="grid grid-cols-2 gap-3 mb-3">
-  ...status label + select...
-  ...priority label + select...
-</div>
       
       {/* Status */}
       <div>
@@ -287,8 +288,9 @@ const completedTasks = tasks.filter((task) => task.status === "completed").lengt
           <option value="completed">Completed</option>
         </select>
       </div>
-
+      
       {/* Priority */}
+  
       <div>
         <label className="text-sm text-gray-500">Priority</label>
         <select
@@ -301,6 +303,11 @@ const completedTasks = tasks.filter((task) => task.status === "completed").lengt
           <option value="high">High</option>
         </select>
       </div>
+                {task.due_date && (
+  <p className="text-sm text-gray-500 mb-2">
+    Due: {new Date(task.due_date).toLocaleDateString()}
+  </p>
+)}
 
     {/* Footer Actions */}
     <div className="flex justify-between items-center">
