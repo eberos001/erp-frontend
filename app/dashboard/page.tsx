@@ -314,7 +314,31 @@ const completedTasks = tasks.filter((task) => task.status === "completed").lengt
     Due: {new Date(task.due_date).toLocaleDateString()}
   </p>
 )}
-
+  <div className="mt-3 mb-3">
+  <label className="text-sm text-gray-500">Assigned To</label>
+  <select
+    value={task.assigned_to || ""}
+    onChange={(e) =>
+      updateTask(task.id, { assigned_to: e.target.value || null })
+    }
+    className="w-full border px-3 py-2 rounded-lg mt-1"
+  >
+    <option value="">Unassigned</option>
+    {teamMembers.map((member) => (
+      <option key={member.id} value={member.id}>
+        {member.full_name || member.email}
+      </option>
+    ))}
+  </select>
+</div>
+{task.assigned_to && (
+  <p className="text-sm text-gray-500 mb-2">
+    Assigned to:{" "}
+    {teamMembers.find((m) => m.id === task.assigned_to)?.full_name ||
+      teamMembers.find((m) => m.id === task.assigned_to)?.email ||
+      "Unknown"}
+  </p>
+)}
     {/* Footer Actions */}
     <div className="flex justify-between items-center">
       <span className="text-xs text-gray-400">
