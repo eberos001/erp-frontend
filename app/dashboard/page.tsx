@@ -10,6 +10,8 @@ type Task = {
   status: string
   priority: string
   organization_id: string
+  assigned_to: string | null
+  due_date: string | null
 }
 
 type Client = {
@@ -22,9 +24,10 @@ type Company = {
   name: string
 }
 
-type Company = {
+type TeamMember = {
   id: string
-  name: string
+  full_name: string
+  email: string
 }
 
 export default function DashboardPage() {
@@ -36,6 +39,7 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -46,59 +50,61 @@ export default function DashboardPage() {
   const [newTaskDueDate, setNewTaskDueDate] = useState("");
 
   async function loadData() {
-    setLoading(true)
-    setError('')
+  setLoading(true)
+  setError('')
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-    if (userError || !user) {
-      router.push('/login')
-      return
-    }
-
-    setEmail(user.email ?? '')
-
-    const { data: memberData } = await supabase
-      .from('team_members')
-      .select('organization_id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (!memberData) {
-      setError('No team member record found.')
-      setLoading(false)
-      return
-    }
-
-    setOrganizationId(memberData.organization_id)
-
-    const { data: tasksData } = await supabase
-      .from('tasks')
-      .select('id, title, status, priority, organization_id')
-      .order('created_at', { ascending: false })
-
-    const { data: clientsData } = await supabase
-      .from('clients')
-      .select('id, name')
-      .order('created_at', { ascending: false })
-
-    const { data: companiesData } = await supabase
-      .from('companies')
-      .select('id, name')
-      .order('created_at', { ascending: false })
-
-    setTasks(tasksData || [])
-    setClients(clientsData || [])
-    setCompanies(companiesData || [])
-    setLoading(false)
+  if (userError || !user) {
+    router.push('/login')
+    return
   }
 
-  useEffect(() => {
-    loadData()
-  }, [])
+  setEmail(user.email ?? '')
+
+  const { data: memberData } = await supabase
+    .from('team_members')
+    .select('organization_id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!memberData) {
+    setError('No team member record found.')
+    setLoading(false)
+    return
+  }
+
+   setOrganizationId(memberData.organization_id)
+
+const { data: tasksData } = await supabase
+  .from('tasks')
+  .select('id, title, status, priority, organization_id, assigned_to, due_date')
+  .order('created_at', { ascending: false })
+
+const { data: clientsData } = await supabase
+  .from('clients')
+  .select('id, name')
+  .order('created_at', { ascending: false })
+
+const { data: companiesData } = await supabase
+  .from('companies')
+  .select('id, name')
+  .order('created_at', { ascending: false })
+
+const { data: teamData } = await supabase
+  .from('team_members')
+  .select('id, full_name, email')
+  .eq('organization_id', memberData.organization_id)
+
+setTasks(tasksData || [])
+setClients(clientsData || [])
+setCompanies(companiesData || [])
+setTeamMembers(teamData || [])
+setLoading(false)
+}
 
   async function handleCreateTask(e: React.FormEvent) {
     e.preventDefault()
