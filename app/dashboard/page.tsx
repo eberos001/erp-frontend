@@ -12,6 +12,8 @@ type Task = {
   organization_id: string
   assigned_to: string | null
   due_date: string | null
+  client_id: string | null
+company_id: string | null
 }
 
 type Client = {
@@ -81,7 +83,7 @@ export default function DashboardPage() {
 
 const { data: tasksData } = await supabase
   .from('tasks')
-  .select('id, title, status, priority, organization_id, assigned_to, due_date')
+  .select('id, title, status, priority, organization_id, assigned_to, due_date, client_id, company_id')
   .order('created_at', { ascending: false })
 
 const { data: clientsData } = await supabase
@@ -331,12 +333,59 @@ const completedTasks = tasks.filter((task) => task.status === "completed").lengt
     ))}
   </select>
 </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+  <div>
+    <label className="text-sm text-gray-500">Client</label>
+    <select
+      value={task.client_id || ""}
+      onChange={(e) =>
+        updateTask(task.id, { client_id: e.target.value || null })
+      }
+      className="w-full border px-3 py-2 rounded-lg mt-1"
+    >
+      <option value="">No client</option>
+      {clients.map((client) => (
+        <option key={client.id} value={client.id}>
+          {client.name}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  <div>
+    <label className="text-sm text-gray-500">Company</label>
+    <select
+      value={task.company_id || ""}
+      onChange={(e) =>
+        updateTask(task.id, { company_id: e.target.value || null })
+      }
+      className="w-full border px-3 py-2 rounded-lg mt-1"
+    >
+      <option value="">No company</option>
+      {companies.map((company) => (
+        <option key={company.id} value={company.id}>
+          {company.name}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
 {task.assigned_to && (
   <p className="text-sm text-gray-500 mb-2">
     Assigned to:{" "}
     {teamMembers.find((m) => m.id === task.assigned_to)?.full_name ||
       teamMembers.find((m) => m.id === task.assigned_to)?.email ||
       "Unknown"}
+  </p>
+)}\{task.client_id && (
+  <p className="text-sm text-gray-500 mb-1">
+    Client: {clients.find((c) => c.id === task.client_id)?.name || "Unknown"}
+  </p>
+)}
+
+{task.company_id && (
+  <p className="text-sm text-gray-500 mb-2">
+    Company: {companies.find((c) => c.id === task.company_id)?.name || "Unknown"}
   </p>
 )}
     {/* Footer Actions */}
