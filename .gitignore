@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local AI bot credentials
+AIBOT/credentials.json
+AIBOT/EBEROSLLC-Engine-Bot/credentials.json
+AIBOT/EBEROSLLC-Engine-Bot/token.json

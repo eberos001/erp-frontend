@@ -1,0 +1,57 @@
+remote: error: GH013: Repository rule violations found for refs/heads/main.        
+remote: 
+remote: - GITHUB PUSH PROTECTION        
+remote:   —————————————————————————————————————————        
+remote:     Resolve the following violations before pushing again        
+remote: 
+remote:     - Push cannot contain secrets        
+remote: 
+remote:             
+remote:      (?) Learn how to resolve a blocked push        
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push        
+remote:             
+remote:             
+remote:       —— Google OAuth Access Token —————————————————————————        
+remote:        locations:        
+remote:          - commit: 2766748d0735c7455798966b4c0cf1b034d2deee        
+remote:            path: AIBOT/EBEROSLLC-Engine-Bot/token.json:1        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.        
+remote:        https://github.com/eberos001/erp-frontend/security/secret-scanning/unblock-secret/3GkGAoLlTVdlEhF166CvUW8r2de        
+remote:             
+remote:             
+remote:       —— Google OAuth Refresh Token ————————————————————————        
+remote:        locations:        
+remote:          - commit: 2766748d0735c7455798966b4c0cf1b034d2deee        
+remote:            path: AIBOT/EBEROSLLC-Engine-Bot/token.json:1        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.        
+remote:        https://github.com/eberos001/erp-frontend/security/secret-scanning/unblock-secret/3GkGAn8cbMdOPHfgjxTViDts6pP        
+remote:             
+remote:             
+remote:       —— Google OAuth Client ID ————————————————————————————        
+remote:        locations:        
+remote:          - commit: 2766748d0735c7455798966b4c0cf1b034d2deee        
+remote:            path: AIBOT/EBEROSLLC-Engine-Bot/token.json:1        
+remote:          - commit: 2766748d0735c7455798966b4c0cf1b034d2deee        
+remote:            path: AIBOT/credentials.json:1        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.        
+remote:        https://github.com/eberos001/erp-frontend/security/secret-scanning/unblock-secret/3GkGAqIoKhbPMsUQ8j4mi80tWfh        
+remote:             
+remote:             
+remote:       —— Google OAuth Client Secret ————————————————————————        
+remote:        locations:        
+remote:          - commit: 2766748d0735c7455798966b4c0cf1b034d2deee        
+remote:            path: AIBOT/EBEROSLLC-Engine-Bot/token.json:1        
+remote:          - commit: 2766748d0735c7455798966b4c0cf1b034d2deee        
+remote:            path: AIBOT/credentials.json:1        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.        
+remote:        https://github.com/eberos001/erp-frontend/security/secret-scanning/unblock-secret/3GkGAtlzZYBWo6rMnKml687quvb        
+remote:             
+remote: 
+remote: 
+To https://github.com/eberos001/erp-frontend.git
+ ! [remote rejected] main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/eberos001/erp-frontend.git'

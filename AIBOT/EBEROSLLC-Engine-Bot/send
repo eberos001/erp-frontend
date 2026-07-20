@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+USER_NAME="${1:-Viewer}"
+shift || true
+MESSAGE="${*:-}"
+
+if [[ -z "$MESSAGE" ]]; then
+  echo "Usage: ./send <user> <message...>"
+  exit 1
+fi
+
+# Use nanoseconds for unique filenames (prevents overwrites)
+STAMP="$(date -u +%Y%m%dT%H%M%S)"
+NANO="$(date -u +%N)"
+
+mkdir -p queue
+
+FILE="queue/msg_${STAMP}_${NANO}.json"
+
+cat > "$FILE" << JSON
+{
+  "thread_id": "local-${STAMP}_${NANO}",
+  "user": "$USER_NAME",
+  "message": "$MESSAGE"
+}
+JSON
+
+echo "✅ Queued: $FILE"

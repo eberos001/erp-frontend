@@ -1,0 +1,222 @@
+import time
+from dataclasses import dataclass, field
+from typing import List, Optional
+
+
+@dataclass
+class Message:
+    id: int
+    user_id: str
+    username: str
+    text: str
+    timestamp: float
+
+
+@dataclass
+class ConversationThread:
+    thread_id: int
+    primary_user_id: str
+    username: str
+    status: str  # "active", "waiting", "closed"
+    messages: List[Message] = field(default_factory=list)
+    last_update: float = field(default_factory=time.time)
+
+
+class AutomationEngine:
+    def __init__(self, system_prompt, logic_map, api_spec, interaction_protocol, chatbot_spec):
+        self.system_prompt = system_prompt
+        self.logic_map = logic_map
+        self.api_spec = api_spec
+        self.interaction_protocol = interaction_protocol
+        self.chatbot_spec = chatbot_spec
+
+        # Simulated internal state (later this will be real YouTube + AI state)
+        self.next_message_id = 1
+        self.next_thread_id = 1
+
+        self.active_thread: Optional[ConversationThread] = None
+        self.waiting_threads: List[ConversationThread] = []
+        self.overflow_users: List[str] = []
+
+        self.last_activity_time = time.time()
+        self.idle_threshold_seconds = 20  # later can align with your protocol
+
+        print("🔹 Automation Layer Loaded (structured skeleton).")
+
+    # ------------------------------------------------------------------
+    # 1) Simulated chat polling (placeholder for YouTube API)
+    # ------------------------------------------------------------------
+    def poll_chat_messages(self) -> List[Message]:
+        """
+        Placeholder for YouTube Live Chat polling.
+        For now, this returns an empty list so we don't spam the console.
+
+        Later:
+          - Call YouTube API
+          - Fetch messages newer than last timestamp
+          - Convert to Message objects
+        """
+        # To test, you could temporarily hard-code a fake message here.
+        return []
+
+    # ------------------------------------------------------------------
+    # 2) Message classification (placeholder, no AI yet)
+    # ------------------------------------------------------------------
+    def classify_message_type(self, message: Message) -> str:
+        """
+        Very simple placeholder classifier.
+
+        Later:
+          - Send to AI in 'classify_only' mode
+          - Return: "problem", "clarification", "emotion", "noise", "troll"
+        """
+        text_lower = message.text.lower()
+
+        if any(word in text_lower for word in ["stuck", "confused", "don’t know", "don't know", "overwhelmed", "help"]):
+            return "problem"
+
+        if any(word in text_lower for word in ["thanks", "that helps", "ok", "okay"]):
+            return "emotion"
+
+        if any(word in text_lower for word in ["hi", "hello", "yo", "sup"]):
+            return "noise"
+
+        # Default for now
+        return "problem"
+
+    # ------------------------------------------------------------------
+    # 3) Thread & queue management (skeleton)
+    # ------------------------------------------------------------------
+    def get_or_create_thread_for_user(self, message: Message) -> ConversationThread:
+        # Check active thread
+        if self.active_thread and self.active_thread.primary_user_id == message.user_id:
+            return self.active_thread
+
+        # Check waiting threads
+        for thread in self.waiting_threads:
+            if thread.primary_user_id == message.user_id:
+                return thread
+
+        # Create new thread
+        thread = ConversationThread(
+            thread_id=self.next_thread_id,
+            primary_user_id=message.user_id,
+            username=message.username,
+            status="waiting" if self.active_thread else "active",
+            messages=[message],
+        )
+        self.next_thread_id += 1
+
+        if self.active_thread is None:
+            self.active_thread = thread
+        else:
+            # simple queue limit of 3 for now
+            if len(self.waiting_threads) < 3:
+                self.waiting_threads.append(thread)
+            else:
+                # overflow – in real system we’d send “You’re on the list…” reply
+                self.overflow_users.append(message.user_id)
+
+        return thread
+
+    # ------------------------------------------------------------------
+    # 4) Process the active thread (placeholder for AI Engine call)
+    # ------------------------------------------------------------------
+    def process_active_thread(self):
+        """
+        This is where we'd:
+
+          - Build conversation history
+          - Call AI Engine with system prompt + logic map etc.
+          - Receive 7-step structured response
+          - Post back to chat
+          - Update thread status
+        """
+
+        if not self.active_thread:
+            return
+
+        thread = self.active_thread
+
+        # For now we just print a simulated response preview.
+        print(f"\n🎯 Processing thread for @{thread.username} (thread_id={thread.thread_id})")
+        last_message = thread.messages[-1]
+        print(f"   Last message: {last_message.text!r}")
+
+        print("   [SIMULATED ENGINE RESPONSE START]")
+        print("   1) Problem Snapshot")
+        print("   2) Key Constraints")
+        print("   3) Pattern / Root Issue")
+        print("   4) Options")
+        print("   5) Recommended Path")
+        print("   6) First 3 Actions")
+        print("   7) Reflection Question")
+        print("   [SIMULATED ENGINE RESPONSE END]\n")
+
+        # For now we treat each cycle as “resolved”
+        thread.status = "closed"
+
+        # Rotate queue
+        if self.waiting_threads:
+            self.active_thread = self.waiting_threads.pop(0)
+            self.active_thread.status = "active"
+        else:
+            self.active_thread = None
+
+        self.last_activity_time = time.time()
+
+    # ------------------------------------------------------------------
+    # 5) Idle / keep-alive handling (skeleton)
+    # ------------------------------------------------------------------
+    def handle_idle(self):
+        """
+        Called when there has been no significant activity for a while.
+        Later:
+          - Post idle prompt from Interaction Protocol v1
+        """
+        now = time.time()
+        if now - self.last_activity_time > self.idle_threshold_seconds:
+            print("💤 Idle detected. (Later: post idle prompt to chat.)")
+            self.last_activity_time = now
+
+    # ------------------------------------------------------------------
+    # MAIN CYCLE
+    # ------------------------------------------------------------------
+    def run_cycle(self):
+        """
+        One full Automation Layer cycle:
+          - Poll chat
+          - Classify messages
+          - Update threads/queue
+          - Process active thread
+          - Handle idle
+        """
+
+        print("🔄 Running engine polling cycle (structured)...")
+
+        # 1) Poll chat messages (stub)
+        messages = self.poll_chat_messages()
+
+        # 2) Classify and update threads
+        for msg in messages:
+            msg_type = self.classify_message_type(msg)
+
+            if msg_type == "noise":
+                print(f"👋 Noise from @{msg.username}: {msg.text!r}")
+                # Later: send short acknowledgment like in Interaction Protocol
+                continue
+
+            # For now treat everything else as a problem or clarification
+            thread = self.get_or_create_thread_for_user(msg)
+            thread.messages.append(msg)
+            thread.last_update = time.time()
+            print(f"📥 Added message to thread {thread.thread_id} ({msg_type}).")
+
+        # 3) Process active thread if any
+        if self.active_thread:
+            self.process_active_thread()
+        else:
+            print("ℹ️ No active thread to process this cycle.")
+
+        # 4) Idle handling
+        self.handle_idle()
