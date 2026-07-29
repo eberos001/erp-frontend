@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import ExecutiveIntelligencePanel from "./executive-intelligence/ExecutiveIntelligencePanel"
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ||
@@ -6684,12 +6685,16 @@ const archivedVendorBills = vendorBills.filter(
 const today = new Date()
 
 const overdueVendorBills = activeVendorBills.filter((bill) => {
-  if (!bill.due_date || getVendorBillCalculatedStatus(bill) === "paid") return false
+  if (!bill.due_date || getVendorBillCalculatedStatus(bill) === "paid") {
+    return false
+  }
 
   const dueDate = new Date(bill.due_date)
 
   return dueDate < today
 })
+const riskCount = overdueVendorBills.length
+
 
 const dueSoonVendorBills = activeVendorBills.filter((bill) => {
   if (!bill.due_date || getVendorBillCalculatedStatus(bill) === "paid") return false
@@ -7140,11 +7145,19 @@ const searchValue = movementSearch.toLowerCase().trim()
     movementTypeFilter === "all" ||
     movement.movement_type === movementTypeFilter
 
-  return matchesSearch && matchesType
+return matchesSearch && matchesType
 })
+
 const activeSalesOrders = salesOrders.filter(
   (order: any) => !order.is_archived
 )
+
+const growthOpportunityCount = activeSalesOrders.filter(
+  (order: any) =>
+    order.status === "confirmed" ||
+    order.status === "shipped"
+).length
+
 
 const archivedSalesOrders = salesOrders.filter(
   (order: any) => order.is_archived
@@ -7361,6 +7374,84 @@ const totalAlertCount =
   overdueCustomerInvoiceAlerts.length +
   lateTaskAlerts.length
 
+  const lowStockCount = lowInventoryAlerts.length
+
+const overdueCustomerInvoiceCount =
+  overdueCustomerInvoiceAlerts.length
+
+const lateTaskCount = lateTaskAlerts.length
+
+const unfulfilledSalesOrderCount = activeSalesOrders.filter(
+  (order) =>
+    order.status === "confirmed" ||
+    order.status === "shipped"
+).filter(
+  (order) =>
+    getSalesOrderFulfillmentStatus(order.id) !== "Fulfilled"
+).length
+
+const executiveRecommendations: string[] = []
+
+if (riskCount > 0) {
+  executiveRecommendations.push(
+    `Review ${riskCount} overdue vendor ${
+      riskCount === 1 ? "bill" : "bills"
+    } to reduce supplier and purchasing risk.`
+  )
+}
+
+if (overdueCustomerInvoiceCount > 0) {
+  executiveRecommendations.push(
+    `Follow up on ${overdueCustomerInvoiceCount} overdue customer ${
+      overdueCustomerInvoiceCount === 1 ? "invoice" : "invoices"
+    } to improve cash flow.`
+  )
+}
+
+if (lowStockCount > 0) {
+  executiveRecommendations.push(
+    `Review ${lowStockCount} low-stock inventory ${
+      lowStockCount === 1 ? "item" : "items"
+    } before fulfillment is affected.`
+  )
+}
+
+if (lateTaskCount > 0) {
+  executiveRecommendations.push(
+    `Address ${lateTaskCount} overdue ${
+      lateTaskCount === 1 ? "task" : "tasks"
+    } to reduce operational delays.`
+  )
+}
+
+if (unfulfilledSalesOrderCount > 0) {
+  executiveRecommendations.push(
+    `Prioritize fulfillment for ${unfulfilledSalesOrderCount} active sales ${
+      unfulfilledSalesOrderCount === 1 ? "order" : "orders"
+    }.`
+  )
+}
+
+if (
+  executiveRecommendations.length === 0 &&
+  growthOpportunityCount > 0
+) {
+  executiveRecommendations.push(
+    `Review ${growthOpportunityCount} active sales ${
+      growthOpportunityCount === 1 ? "opportunity" : "opportunities"
+    } for fulfillment and revenue growth.`
+  )
+}
+
+const actionableRecommendationCount =
+  executiveRecommendations.length
+
+if (executiveRecommendations.length === 0) {
+  executiveRecommendations.push(
+    "Operations are currently stable. No immediate action is required."
+  )
+}
+
            useEffect(() => {
   if (
     isAccessRestricted &&
@@ -7396,6 +7487,11 @@ return (
   { label: "Reports", key: "reporting_basic", canView: canViewReports },
   { label: "Smart AI Assist", key: "smart_ai", canView: canUseSmartAi },
   { label: "Settings", key: "organization_settings", canView: canManageSettings },
+  {
+  label: "Executive Intelligence",
+  key: "executive_intelligence",
+  canView: canUseSmartAi,
+},
 ]
 .filter((item) => item.canView)
 .map((item) => {
@@ -11563,6 +11659,21 @@ return (
   </div>
 </div>
   </section>
+)}
+
+{activeModule === "Executive Intelligence" && canUseSmartAi && (
+
+<ExecutiveIntelligencePanel
+  riskCount={riskCount}
+  growthOpportunityCount={growthOpportunityCount}
+  lowStockCount={lowStockCount}
+  overdueCustomerInvoiceCount={overdueCustomerInvoiceCount}
+  lateTaskCount={lateTaskCount}
+  unfulfilledSalesOrderCount={unfulfilledSalesOrderCount}
+  actionableRecommendationCount={actionableRecommendationCount}
+  executiveRecommendations={executiveRecommendations}
+/>
+
 )}
 
 {activeModule === "Smart AI Assist" && canUseSmartAi && aiAssistEnabled && (
