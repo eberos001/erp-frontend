@@ -375,6 +375,25 @@ export default function DashboardPage() {
   const [advancedReportsEnabled, setAdvancedReportsEnabled] = useState(false)
   const [aiAssistEnabled, setAiAssistEnabled] = useState(false)
   const [smartAiEnabled, setSmartAiEnabled] = useState(false)
+  const [
+  executiveIntelligenceEnabled,
+  setExecutiveIntelligenceEnabled,
+] = useState(false)
+
+const [
+  executiveIntelligencePlan,
+  setExecutiveIntelligencePlan,
+] = useState("none")
+
+const [
+  executiveIntelligenceStartedAt,
+  setExecutiveIntelligenceStartedAt,
+] = useState<string | null>(null)
+
+const [
+  executiveIntelligenceExpiresAt,
+  setExecutiveIntelligenceExpiresAt,
+] = useState<string | null>(null)
 
   const [smartAiPlan, setSmartAiPlan] = useState("none")
 
@@ -1771,7 +1790,7 @@ if (moduleError) {
 const { data: organizationData, error: organizationError } = await supabase
   .from("organizations")
 .select(
-  "name, contact_email, phone, website, address, subscription_tier, subscription_status, trial_ends_at, access_status, seat_limit, max_companies, max_clients, max_inventory_items, max_monthly_invoices, advanced_reports_enabled, ai_assist_enabled, smart_ai_enabled, smart_ai_plan, smart_ai_started_at, smart_ai_expires_at, smart_ai_recovery_enabled, smart_ai_recovery_mode, smart_ai_auto_retry_enabled, smart_ai_max_auto_retries, smart_ai_last_health_check_at"
+  "name, contact_email, phone, website, address, subscription_tier, subscription_status, trial_ends_at, access_status, seat_limit, max_companies, max_clients, max_inventory_items, max_monthly_invoices, advanced_reports_enabled, ai_assist_enabled, smart_ai_enabled, smart_ai_plan, smart_ai_started_at, smart_ai_expires_at, smart_ai_recovery_enabled, smart_ai_recovery_mode, smart_ai_auto_retry_enabled, smart_ai_max_auto_retries, smart_ai_last_health_check_at, executive_intelligence_enabled, executive_intelligence_plan, executive_intelligence_started_at, executive_intelligence_expires_at"
 )
   .eq("id", loadedOrgId)
   .single()
@@ -1838,6 +1857,22 @@ setSmartAiLastHealthCheckAt(
 
 setSmartAiPlan(
   organizationData?.smart_ai_plan || "none"
+)
+
+setExecutiveIntelligenceEnabled(
+  organizationData?.executive_intelligence_enabled ?? false
+)
+
+setExecutiveIntelligencePlan(
+  organizationData?.executive_intelligence_plan || "none"
+)
+
+setExecutiveIntelligenceStartedAt(
+  organizationData?.executive_intelligence_started_at || null
+)
+
+setExecutiveIntelligenceExpiresAt(
+  organizationData?.executive_intelligence_expires_at || null
 )
 
 setSmartAiStartedAt(
@@ -6886,6 +6921,27 @@ const canUseSmartAi =
   smartAiEnabled &&
   smartAiPlanIsActive &&
   smartAiNotExpired
+
+  const executiveIntelligencePlanIsActive =
+  executiveIntelligencePlan === "trial" ||
+  executiveIntelligencePlan === "starter" ||
+  executiveIntelligencePlan === "growth" ||
+  executiveIntelligencePlan === "professional" ||
+  executiveIntelligencePlan === "enterprise"
+
+const executiveIntelligenceNotExpired =
+  !executiveIntelligenceExpiresAt ||
+  new Date(
+    executiveIntelligenceExpiresAt
+  ).getTime() > Date.now()
+
+const canUseExecutiveIntelligence =
+  isAdmin &&
+  executiveIntelligenceEnabled &&
+  executiveIntelligencePlanIsActive &&
+  executiveIntelligenceNotExpired
+
+
   const recoveryModeIsConfigured =
   smartAiRecoveryMode === "monitor" ||
   smartAiRecoveryMode === "assist" ||
@@ -7490,7 +7546,7 @@ return (
   {
   label: "Executive Intelligence",
   key: "executive_intelligence",
-  canView: canUseSmartAi,
+  canView: canUseExecutiveIntelligence,
 },
 ]
 .filter((item) => item.canView)
@@ -11661,7 +11717,8 @@ return (
   </section>
 )}
 
-{activeModule === "Executive Intelligence" && canUseSmartAi && (
+{activeModule === "Executive Intelligence" &&
+  canUseExecutiveIntelligence && (
 
 <ExecutiveIntelligencePanel
   riskCount={riskCount}
