@@ -12411,7 +12411,159 @@ return (
     </div>
   </div>
 </div>
-</section>     
+</section>    
+
+<section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div>
+      <h3 className="text-lg font-semibold text-slate-950">
+        Subscription & Support
+      </h3>
+
+      <p className="mt-1 text-sm text-slate-500">
+        Manage your Sephomic subscription, plan access, and support.
+      </p>
+    </div>
+
+    <div className="flex flex-wrap gap-2">
+      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-700">
+        {subscriptionTier} plan
+      </span>
+
+      <span
+        className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+          subscriptionStatus === "active" ||
+          subscriptionStatus === "trialing"
+            ? "bg-green-100 text-green-700"
+            : subscriptionStatus === "past_due"
+              ? "bg-amber-100 text-amber-700"
+              : "bg-red-100 text-red-700"
+        }`}
+      >
+        {subscriptionStatus.replace("_", " ")}
+      </span>
+    </div>
+  </div>
+
+  <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    {subscriptionStatus === "trialing" && (
+      <button
+        type="button"
+        onClick={() =>
+          router.push("/account/subscription")
+        }
+        className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+      >
+        Subscribe to a Plan
+      </button>
+    )}
+
+    {[
+      "inactive",
+      "cancelled",
+      "canceled",
+      "expired",
+    ].includes(subscriptionStatus) && (
+      <button
+        type="button"
+        onClick={() =>
+          router.push("/account/subscription")
+        }
+        className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+      >
+        Purchase a Plan
+      </button>
+    )}
+
+    {subscriptionStatus === "active" && (
+      <>
+        <button
+          type="button"
+          onClick={() =>
+            router.push("/account/subscription")
+          }
+          className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+        >
+          Manage Subscription
+        </button>
+
+        {subscriptionTier !== "enterprise" && (
+          <button
+            type="button"
+            onClick={() =>
+              router.push("/account/subscription?mode=upgrade")
+            }
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+          >
+            Upgrade Plan
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() =>
+            router.push("/account/subscription?mode=cancel")
+          }
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+        >
+          Terminate Service
+        </button>
+      </>
+    )}
+
+    {subscriptionStatus === "past_due" && (
+      <button
+        type="button"
+        onClick={() =>
+          router.push("/account/subscription?mode=billing")
+        }
+        className="rounded-xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-700"
+      >
+        Update Billing
+      </button>
+    )}
+
+    <button
+      type="button"
+      onClick={() =>
+        router.push("/support")
+      }
+      className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+    >
+      Contact Support
+    </button>
+  </div>
+
+  {subscriptionStatus === "trialing" &&
+    trialEndsAt && (
+      <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
+        <p className="text-sm font-medium text-blue-900">
+          Your Full Platform Evaluation ends{" "}
+          {new Date(
+            trialEndsAt
+          ).toLocaleDateString()}.
+        </p>
+
+        <p className="mt-1 text-xs text-blue-700">
+          Subscribe before the evaluation ends to
+          continue using your selected Sephomic plan.
+        </p>
+      </div>
+    )}
+
+  {subscriptionStatus === "past_due" && (
+    <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <p className="text-sm font-medium text-amber-900">
+        Your subscription requires billing attention.
+      </p>
+
+      <p className="mt-1 text-xs text-amber-700">
+        Update your billing information to maintain
+        uninterrupted platform access.
+      </p>
+    </div>
+  )}
+</section>
 
 {isAdmin && (
   <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow duration-200">
