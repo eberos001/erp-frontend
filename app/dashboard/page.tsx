@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import ExecutiveIntelligencePanel from "./executive-intelligence/ExecutiveIntelligencePanel"
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ||
@@ -374,6 +375,25 @@ export default function DashboardPage() {
   const [advancedReportsEnabled, setAdvancedReportsEnabled] = useState(false)
   const [aiAssistEnabled, setAiAssistEnabled] = useState(false)
   const [smartAiEnabled, setSmartAiEnabled] = useState(false)
+  const [
+  executiveIntelligenceEnabled,
+  setExecutiveIntelligenceEnabled,
+] = useState(false)
+
+const [
+  executiveIntelligencePlan,
+  setExecutiveIntelligencePlan,
+] = useState("none")
+
+const [
+  executiveIntelligenceStartedAt,
+  setExecutiveIntelligenceStartedAt,
+] = useState<string | null>(null)
+
+const [
+  executiveIntelligenceExpiresAt,
+  setExecutiveIntelligenceExpiresAt,
+] = useState<string | null>(null)
 
   const [smartAiPlan, setSmartAiPlan] = useState("none")
 
@@ -1770,7 +1790,7 @@ if (moduleError) {
 const { data: organizationData, error: organizationError } = await supabase
   .from("organizations")
 .select(
-  "name, contact_email, phone, website, address, subscription_tier, subscription_status, trial_ends_at, access_status, seat_limit, max_companies, max_clients, max_inventory_items, max_monthly_invoices, advanced_reports_enabled, ai_assist_enabled, smart_ai_enabled, smart_ai_plan, smart_ai_started_at, smart_ai_expires_at, smart_ai_recovery_enabled, smart_ai_recovery_mode, smart_ai_auto_retry_enabled, smart_ai_max_auto_retries, smart_ai_last_health_check_at"
+  "name, contact_email, phone, website, address, subscription_tier, subscription_status, trial_ends_at, access_status, seat_limit, max_companies, max_clients, max_inventory_items, max_monthly_invoices, advanced_reports_enabled, ai_assist_enabled, smart_ai_enabled, smart_ai_plan, smart_ai_started_at, smart_ai_expires_at, smart_ai_recovery_enabled, smart_ai_recovery_mode, smart_ai_auto_retry_enabled, smart_ai_max_auto_retries, smart_ai_last_health_check_at, executive_intelligence_enabled, executive_intelligence_plan, executive_intelligence_started_at, executive_intelligence_expires_at"
 )
   .eq("id", loadedOrgId)
   .single()
@@ -1837,6 +1857,22 @@ setSmartAiLastHealthCheckAt(
 
 setSmartAiPlan(
   organizationData?.smart_ai_plan || "none"
+)
+
+setExecutiveIntelligenceEnabled(
+  organizationData?.executive_intelligence_enabled ?? false
+)
+
+setExecutiveIntelligencePlan(
+  organizationData?.executive_intelligence_plan || "none"
+)
+
+setExecutiveIntelligenceStartedAt(
+  organizationData?.executive_intelligence_started_at || null
+)
+
+setExecutiveIntelligenceExpiresAt(
+  organizationData?.executive_intelligence_expires_at || null
 )
 
 setSmartAiStartedAt(
@@ -6684,12 +6720,16 @@ const archivedVendorBills = vendorBills.filter(
 const today = new Date()
 
 const overdueVendorBills = activeVendorBills.filter((bill) => {
-  if (!bill.due_date || getVendorBillCalculatedStatus(bill) === "paid") return false
+  if (!bill.due_date || getVendorBillCalculatedStatus(bill) === "paid") {
+    return false
+  }
 
   const dueDate = new Date(bill.due_date)
 
   return dueDate < today
 })
+const riskCount = overdueVendorBills.length
+
 
 const dueSoonVendorBills = activeVendorBills.filter((bill) => {
   if (!bill.due_date || getVendorBillCalculatedStatus(bill) === "paid") return false
@@ -6881,6 +6921,27 @@ const canUseSmartAi =
   smartAiEnabled &&
   smartAiPlanIsActive &&
   smartAiNotExpired
+
+  const executiveIntelligencePlanIsActive =
+  executiveIntelligencePlan === "trial" ||
+  executiveIntelligencePlan === "starter" ||
+  executiveIntelligencePlan === "growth" ||
+  executiveIntelligencePlan === "professional" ||
+  executiveIntelligencePlan === "enterprise"
+
+const executiveIntelligenceNotExpired =
+  !executiveIntelligenceExpiresAt ||
+  new Date(
+    executiveIntelligenceExpiresAt
+  ).getTime() > Date.now()
+
+const canUseExecutiveIntelligence =
+  isAdmin &&
+  executiveIntelligenceEnabled &&
+  executiveIntelligencePlanIsActive &&
+  executiveIntelligenceNotExpired
+
+
   const recoveryModeIsConfigured =
   smartAiRecoveryMode === "monitor" ||
   smartAiRecoveryMode === "assist" ||
@@ -7140,11 +7201,19 @@ const searchValue = movementSearch.toLowerCase().trim()
     movementTypeFilter === "all" ||
     movement.movement_type === movementTypeFilter
 
-  return matchesSearch && matchesType
+return matchesSearch && matchesType
 })
+
 const activeSalesOrders = salesOrders.filter(
   (order: any) => !order.is_archived
 )
+
+const growthOpportunityCount = activeSalesOrders.filter(
+  (order: any) =>
+    order.status === "confirmed" ||
+    order.status === "shipped"
+).length
+
 
 const archivedSalesOrders = salesOrders.filter(
   (order: any) => order.is_archived
@@ -7361,6 +7430,84 @@ const totalAlertCount =
   overdueCustomerInvoiceAlerts.length +
   lateTaskAlerts.length
 
+  const lowStockCount = lowInventoryAlerts.length
+
+const overdueCustomerInvoiceCount =
+  overdueCustomerInvoiceAlerts.length
+
+const lateTaskCount = lateTaskAlerts.length
+
+const unfulfilledSalesOrderCount = activeSalesOrders.filter(
+  (order) =>
+    order.status === "confirmed" ||
+    order.status === "shipped"
+).filter(
+  (order) =>
+    getSalesOrderFulfillmentStatus(order.id) !== "Fulfilled"
+).length
+
+const executiveRecommendations: string[] = []
+
+if (riskCount > 0) {
+  executiveRecommendations.push(
+    `Review ${riskCount} overdue vendor ${
+      riskCount === 1 ? "bill" : "bills"
+    } to reduce supplier and purchasing risk.`
+  )
+}
+
+if (overdueCustomerInvoiceCount > 0) {
+  executiveRecommendations.push(
+    `Follow up on ${overdueCustomerInvoiceCount} overdue customer ${
+      overdueCustomerInvoiceCount === 1 ? "invoice" : "invoices"
+    } to improve cash flow.`
+  )
+}
+
+if (lowStockCount > 0) {
+  executiveRecommendations.push(
+    `Review ${lowStockCount} low-stock inventory ${
+      lowStockCount === 1 ? "item" : "items"
+    } before fulfillment is affected.`
+  )
+}
+
+if (lateTaskCount > 0) {
+  executiveRecommendations.push(
+    `Address ${lateTaskCount} overdue ${
+      lateTaskCount === 1 ? "task" : "tasks"
+    } to reduce operational delays.`
+  )
+}
+
+if (unfulfilledSalesOrderCount > 0) {
+  executiveRecommendations.push(
+    `Prioritize fulfillment for ${unfulfilledSalesOrderCount} active sales ${
+      unfulfilledSalesOrderCount === 1 ? "order" : "orders"
+    }.`
+  )
+}
+
+if (
+  executiveRecommendations.length === 0 &&
+  growthOpportunityCount > 0
+) {
+  executiveRecommendations.push(
+    `Review ${growthOpportunityCount} active sales ${
+      growthOpportunityCount === 1 ? "opportunity" : "opportunities"
+    } for fulfillment and revenue growth.`
+  )
+}
+
+const actionableRecommendationCount =
+  executiveRecommendations.length
+
+if (executiveRecommendations.length === 0) {
+  executiveRecommendations.push(
+    "Operations are currently stable. No immediate action is required."
+  )
+}
+
            useEffect(() => {
   if (
     isAccessRestricted &&
@@ -7396,6 +7543,11 @@ return (
   { label: "Reports", key: "reporting_basic", canView: canViewReports },
   { label: "Smart AI Assist", key: "smart_ai", canView: canUseSmartAi },
   { label: "Settings", key: "organization_settings", canView: canManageSettings },
+  {
+  label: "Executive Intelligence",
+  key: "executive_intelligence",
+  canView: canUseExecutiveIntelligence,
+},
 ]
 .filter((item) => item.canView)
 .map((item) => {
@@ -11565,6 +11717,22 @@ return (
   </section>
 )}
 
+{activeModule === "Executive Intelligence" &&
+  canUseExecutiveIntelligence && (
+
+<ExecutiveIntelligencePanel
+  riskCount={riskCount}
+  growthOpportunityCount={growthOpportunityCount}
+  lowStockCount={lowStockCount}
+  overdueCustomerInvoiceCount={overdueCustomerInvoiceCount}
+  lateTaskCount={lateTaskCount}
+  unfulfilledSalesOrderCount={unfulfilledSalesOrderCount}
+  actionableRecommendationCount={actionableRecommendationCount}
+  executiveRecommendations={executiveRecommendations}
+/>
+
+)}
+
 {activeModule === "Smart AI Assist" && canUseSmartAi && aiAssistEnabled && (
   <section className="space-y-6">
     <div className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 text-white shadow-xl">
@@ -12243,7 +12411,159 @@ return (
     </div>
   </div>
 </div>
-</section>     
+</section>    
+
+<section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div>
+      <h3 className="text-lg font-semibold text-slate-950">
+        Subscription & Support
+      </h3>
+
+      <p className="mt-1 text-sm text-slate-500">
+        Manage your Sephomic subscription, plan access, and support.
+      </p>
+    </div>
+
+    <div className="flex flex-wrap gap-2">
+      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-700">
+        {subscriptionTier} plan
+      </span>
+
+      <span
+        className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+          subscriptionStatus === "active" ||
+          subscriptionStatus === "trialing"
+            ? "bg-green-100 text-green-700"
+            : subscriptionStatus === "past_due"
+              ? "bg-amber-100 text-amber-700"
+              : "bg-red-100 text-red-700"
+        }`}
+      >
+        {subscriptionStatus.replace("_", " ")}
+      </span>
+    </div>
+  </div>
+
+  <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    {subscriptionStatus === "trialing" && (
+      <button
+        type="button"
+        onClick={() =>
+          router.push("/account/subscription")
+        }
+        className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+      >
+        Subscribe to a Plan
+      </button>
+    )}
+
+    {[
+      "inactive",
+      "cancelled",
+      "canceled",
+      "expired",
+    ].includes(subscriptionStatus) && (
+      <button
+        type="button"
+        onClick={() =>
+          router.push("/account/subscription")
+        }
+        className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+      >
+        Purchase a Plan
+      </button>
+    )}
+
+    {subscriptionStatus === "active" && (
+      <>
+        <button
+          type="button"
+          onClick={() =>
+            router.push("/account/subscription")
+          }
+          className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+        >
+          Manage Subscription
+        </button>
+
+        {subscriptionTier !== "enterprise" && (
+          <button
+            type="button"
+            onClick={() =>
+              router.push("/account/subscription?mode=upgrade")
+            }
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+          >
+            Upgrade Plan
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() =>
+            router.push("/account/subscription?mode=cancel")
+          }
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+        >
+          Terminate Service
+        </button>
+      </>
+    )}
+
+    {subscriptionStatus === "past_due" && (
+      <button
+        type="button"
+        onClick={() =>
+          router.push("/account/subscription?mode=billing")
+        }
+        className="rounded-xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-700"
+      >
+        Update Billing
+      </button>
+    )}
+
+    <button
+      type="button"
+      onClick={() =>
+        router.push("/support")
+      }
+      className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+    >
+      Contact Support
+    </button>
+  </div>
+
+  {subscriptionStatus === "trialing" &&
+    trialEndsAt && (
+      <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
+        <p className="text-sm font-medium text-blue-900">
+          Your Full Platform Evaluation ends{" "}
+          {new Date(
+            trialEndsAt
+          ).toLocaleDateString()}.
+        </p>
+
+        <p className="mt-1 text-xs text-blue-700">
+          Subscribe before the evaluation ends to
+          continue using your selected Sephomic plan.
+        </p>
+      </div>
+    )}
+
+  {subscriptionStatus === "past_due" && (
+    <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <p className="text-sm font-medium text-amber-900">
+        Your subscription requires billing attention.
+      </p>
+
+      <p className="mt-1 text-xs text-amber-700">
+        Update your billing information to maintain
+        uninterrupted platform access.
+      </p>
+    </div>
+  )}
+</section>
 
 {isAdmin && (
   <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow duration-200">
