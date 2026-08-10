@@ -205,17 +205,102 @@ const [checkoutMessage, setCheckoutMessage] =
         </section>
 
         {mode === "upgrade" ? (
-          <section className="rounded-2xl border border-blue-800 bg-blue-950/30 p-6">
-            <h2 className="text-xl font-semibold">
-              Upgrade Plan
-            </h2>
+  <>
+    <section className="rounded-2xl border border-blue-800 bg-blue-950/30 p-6">
+      <h2 className="text-xl font-semibold">
+        Upgrade Plan
+      </h2>
 
-            <p className="mt-2 text-sm text-blue-100">
-              Select a higher Sephomic plan to increase capacity,
-              reporting, support, and intelligence access.
+      <p className="mt-2 text-sm text-blue-100">
+        Select a higher Sephomic plan to increase capacity,
+        reporting, support, and intelligence access.
+      </p>
+    </section>
+
+    <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+      <h2 className="text-xl font-semibold">
+        Choose Your Sephomic Plan
+      </h2>
+
+      <p className="mt-2 text-sm text-slate-300">
+        Choose monthly billing or save with annual billing paid upfront.
+      </p>
+
+      {checkoutMessage ? (
+        <p className="mt-4 rounded-xl border border-red-800 bg-red-950/30 p-3 text-sm text-red-200">
+          {checkoutMessage}
+        </p>
+      ) : null}
+
+      <div className="mt-6 grid gap-5 lg:grid-cols-3">
+        {[
+          {
+            tier: "starter" as const,
+            name: "Starter",
+            monthly: "$399/mo",
+            annual: "$4,309/yr",
+            users: "3 included users",
+          },
+          {
+            tier: "growth" as const,
+            name: "Growth",
+            monthly: "$725/mo",
+            annual: "$7,830/yr",
+            users: "15 included users",
+          },
+          {
+            tier: "professional" as const,
+            name: "Professional",
+            monthly: "$8,000/mo",
+            annual: "$86,400/yr",
+            users: "50 included users",
+          },
+        ].map((plan) => (
+          <div
+            key={plan.tier}
+            className="rounded-2xl border border-slate-700 bg-slate-950 p-5"
+          >
+            <h3 className="text-xl font-bold">
+              {plan.name}
+            </h3>
+
+            <p className="mt-2 text-sm text-slate-400">
+              {plan.users}
             </p>
-          </section>
-        ) : mode === "cancel" ? (
+
+            <div className="mt-5 space-y-3">
+              <button
+                type="button"
+                onClick={() =>
+                  startCheckout(plan.tier, "monthly")
+                }
+                disabled={checkoutLoading !== ""}
+                className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 disabled:opacity-50"
+              >
+                {checkoutLoading === `${plan.tier}-monthly`
+                  ? "Opening Checkout..."
+                  : `${plan.monthly} — Monthly`}
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  startCheckout(plan.tier, "annual")
+                }
+                disabled={checkoutLoading !== ""}
+                className="w-full rounded-xl border border-slate-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {checkoutLoading === `${plan.tier}-annual`
+                  ? "Opening Checkout..."
+                  : `${plan.annual} — Annual`}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  </>
+) : mode === "cancel" ? (
           <section className="rounded-2xl border border-red-800 bg-red-950/30 p-6">
             <h2 className="text-xl font-semibold">
               Terminate Service
