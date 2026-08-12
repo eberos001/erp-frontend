@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@supabase/supabase-js"
 
 function getStripe() {
   const secretKey = process.env.STRIPE_SECRET_KEY
@@ -45,7 +45,28 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const supabase = await createClient()
+  const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL
+
+const serviceRoleKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !serviceRoleKey) {
+  throw new Error(
+    "Supabase service-role configuration is missing."
+  )
+}
+
+const supabase = createClient(
+  supabaseUrl,
+  serviceRoleKey,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  }
+)
 
   try {
     if (
@@ -61,38 +82,45 @@ export async function POST(request: NextRequest) {
       const tier =
         session.metadata?.subscription_tier
 
-      if (
-        organizationId &&
-        session.customer &&
-        session.subscription
-      ) {
-        await supabase
-          .from("organizations")
-          .update({
-            billing_customer_id:
-              typeof session.customer === "string"
-                ? session.customer
-                : session.customer.id,
-            billing_subscription_id:
-              typeof session.subscription === "string"
-                ? session.subscription
-                : session.subscription.id,
-            subscription_status: "active",
-            subscription_tier:
-              tier || undefined,
-            access_status: "active",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", organizationId)
-      }
-    }
+     if (
+  organizationId &&
+  session.customer &&
+  session.subscription
+) {
+  const { error: checkoutUpdateError } =
+    await supabase
+      .from("organizations")
+      .update({
+        billing_customer_id:
+          typeof session.customer === "string"
+            ? session.customer
+            : session.customer.id,
+        billing_subscription_id:
+          typeof session.subscription === "string"
+            ? session.subscription
+            : session.subscription.id,
+        subscription_status: "active",
+        subscription_tier:
+          tier || undefined,
+        access_status: "active",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", organizationId)
 
-    if (
-      event.type === "customer.subscription.updated" ||
-      event.type === "customer.subscription.deleted"
-    ) {
-      const subscription =
-        event.data.object as Stripe.Subscription
+  if (checkoutUpdateError) {
+  throw new Error(
+    `Checkout synchronization failed: ${checkoutUpdateError.message}`
+  )
+}
+}
+}
+
+if (
+  event.type === "customer.subscription.updated" ||
+  event.type === "customer.subscription.deleted"
+) {
+  const subscription =
+    event.data.object as Stripe.Subscription
 
       const organizationId =
         subscription.metadata?.organization_id
