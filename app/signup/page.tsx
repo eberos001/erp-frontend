@@ -2,63 +2,66 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
 
 export default function SignupPage() {
-  const supabase = createClient()
-
   const [fullName, setFullName] = useState("")
   const [companyName, setCompanyName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [teamSize, setTeamSize] = useState("")
   const [message, setMessage] = useState("")
-
   const [error, setError] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
   const [loading, setLoading] = useState(false)
 
-  async function handleDemoRequest(e: React.FormEvent) {
-    e.preventDefault()
+ async function handleDemoRequest(e: React.FormEvent) {
+  e.preventDefault()
 
-    setError("")
-    setSuccessMessage("")
-    setLoading(true)
+  setError("")
+  setSuccessMessage("")
+  setLoading(true)
 
-    if (!fullName.trim()) {
-      setError("Your name is required.")
-      setLoading(false)
-      return
-    }
-
-    if (!companyName.trim()) {
-      setError("Company name is required.")
-      setLoading(false)
-      return
-    }
-
-    if (!email.trim()) {
-      setError("Email is required.")
-      setLoading(false)
-      return
-    }
-
-    const { error: insertError } = await supabase
-      .from("demo_requests")
-      .insert({
-        full_name: fullName.trim(),
-        company_name: companyName.trim(),
-        email: email.trim().toLowerCase(),
-        phone: phone.trim() === "" ? null : phone.trim(),
-        team_size: teamSize === "" ? null : teamSize,
-        message: message.trim() === "" ? null : message.trim(),
-        status: "new",
-      })
-
+  if (!fullName.trim()) {
+    setError("Your name is required.")
     setLoading(false)
+    return
+  }
 
-    if (insertError) {
-      setError(insertError.message)
+  if (!companyName.trim()) {
+    setError("Company name is required.")
+    setLoading(false)
+    return
+  }
+
+  if (!email.trim()) {
+    setError("Email is required.")
+    setLoading(false)
+    return
+  }
+
+  try {
+    const response = await fetch("/api/demo-request", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fullName,
+        companyName,
+        email,
+        phone,
+        teamSize,
+        message,
+      }),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      setError(
+        result.error ||
+          "Unable to submit your demo request."
+      )
       return
     }
 
@@ -70,9 +73,22 @@ export default function SignupPage() {
     setMessage("")
 
     setSuccessMessage(
-      "Your demo request was submitted successfully. We will contact you soon."
+      result.message ||
+        "Your demo request was submitted successfully. We will contact you soon."
     )
+  } catch (requestError) {
+    console.error(
+      "DEMO REQUEST SUBMISSION ERROR:",
+      requestError
+    )
+
+    setError(
+      "Unable to submit your demo request. Please try again."
+    )
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-16 text-white">
